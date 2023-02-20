@@ -19,6 +19,7 @@ import android.view.Surface
 import com.haishinkit.BuildConfig
 import com.haishinkit.graphics.ImageOrientation
 import com.haishinkit.net.NetStream
+import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
 
@@ -107,8 +108,7 @@ class Camera2Source(
         val cameraNames = manager.cameraIdList
         val cameras: MutableList<Map<String, Any>> = ArrayList()
         for (cameraName in cameraNames) {
-            var cameraId: Int
-            cameraId = try {
+            val cameraId: Int = try {
                 cameraName.toInt(10)
             } catch (e: NumberFormatException) {
                 -1
@@ -118,32 +118,46 @@ class Camera2Source(
             }
             val details: HashMap<String, Any> = HashMap()
             val characteristics = manager.getCameraCharacteristics(cameraName)
+            this.characteristics = characteristics
             details["name"] = cameraName
             val sensorOrientation =
                 characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)!!
             details["sensorOrientation"] = sensorOrientation
-            val lensFacing = characteristics.get(CameraCharacteristics.LENS_FACING)!!
-            when (lensFacing) {
-                CameraMetadata.LENS_FACING_FRONT -> details["lensFacing"] = "front"
+            when (characteristics.get(CameraCharacteristics.LENS_FACING)!!) {
+                CameraMetadata.LENS_FACING_FRONT -> {
+                    details["lensFacing"] = "front"
+                    this.cameraId = cameraName
+                }
                 CameraMetadata.LENS_FACING_BACK -> details["lensFacing"] = "back"
                 CameraMetadata.LENS_FACING_EXTERNAL -> details["lensFacing"] = "external"
             }
             cameras.add(details)
         }
+
+        val path = context.getExternalFilesDir(null)
+        val letDirectory = File(path, "LET")
+        letDirectory.mkdirs()
+        val file = File(letDirectory, "RecordsCams.txt")
+        file.appendText("---------- LOGS ----------\n\n\n")
         var indx = 0
         cameras.forEach {
-            println("-----> CAMERA $indx <-----\n\n")
+            println("-----> CAMERA $indx <-----\n")
+            file.appendText("-----> CAMERA $indx <-----\n")
             it.forEach {
-                println("-----> CAM$indx: ${it.key}: ${it.value};")
+                println("-----> CAM$indx: ${it.key}: ${it.value};\n////////////////////\n")
+                file.appendText("-----> CAM$indx: ${it.key}: ${it.value};\n////////////////////\n")
             }
+            indx++
         }
 
-        if (position == null) {
-            this.cameraId = DEFAULT_CAMERA_ID
-        } else {
-            this.cameraId = getCameraId(position) ?: DEFAULT_CAMERA_ID
-        }
-        characteristics = manager.getCameraCharacteristics(cameraId)
+
+//        if (position == null) {
+//            this.cameraId = DEFAULT_CAMERA_ID
+//        } else {
+//            this.cameraId = getCameraId(position) ?: DEFAULT_CAMERA_ID
+//        }
+//        characteristics = manager.getCameraCharacteristics(cameraId)
+
         device = null
         manager.openCamera(cameraId, this, handler)
     }
