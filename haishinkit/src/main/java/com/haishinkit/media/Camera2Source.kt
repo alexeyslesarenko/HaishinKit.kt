@@ -9,6 +9,7 @@ import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
+import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.os.Handler
 import android.os.HandlerThread
@@ -19,6 +20,7 @@ import com.haishinkit.BuildConfig
 import com.haishinkit.graphics.ImageOrientation
 import com.haishinkit.net.NetStream
 import java.util.concurrent.atomic.AtomicBoolean
+
 
 /**
  * A video source that captures a camera by the Camera2 API.
@@ -102,6 +104,40 @@ class Camera2Source(
 
     @SuppressLint("MissingPermission")
     fun open(position: Int? = null) {
+        val cameraNames = manager.cameraIdList
+        val cameras: MutableList<Map<String, Any>> = ArrayList()
+        for (cameraName in cameraNames) {
+            var cameraId: Int
+            cameraId = try {
+                cameraName.toInt(10)
+            } catch (e: NumberFormatException) {
+                -1
+            }
+            if (cameraId < 0) {
+                continue
+            }
+            val details: HashMap<String, Any> = HashMap()
+            val characteristics = manager.getCameraCharacteristics(cameraName)
+            details["name"] = cameraName
+            val sensorOrientation =
+                characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)!!
+            details["sensorOrientation"] = sensorOrientation
+            val lensFacing = characteristics.get(CameraCharacteristics.LENS_FACING)!!
+            when (lensFacing) {
+                CameraMetadata.LENS_FACING_FRONT -> details["lensFacing"] = "front"
+                CameraMetadata.LENS_FACING_BACK -> details["lensFacing"] = "back"
+                CameraMetadata.LENS_FACING_EXTERNAL -> details["lensFacing"] = "external"
+            }
+            cameras.add(details)
+        }
+        var indx = 0
+        cameras.forEach {
+            println("-----> CAMERA $indx <-----\n\n")
+            it.forEach {
+                println("-----> CAM$indx: ${it.key}: ${it.value};")
+            }
+        }
+
         if (position == null) {
             this.cameraId = DEFAULT_CAMERA_ID
         } else {
