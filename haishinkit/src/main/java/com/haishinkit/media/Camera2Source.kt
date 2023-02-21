@@ -106,6 +106,16 @@ class Camera2Source(
     @SuppressLint("MissingPermission")
     fun open(position: Int? = null) {
         val cameraNames = manager.cameraIdList
+
+        cameraNames.forEach {
+            println("CAMERA $it")
+            val path = context.getExternalFilesDir(null)
+            val letDirectory = File(path, "LET")
+            letDirectory.mkdirs()
+            val file = File(letDirectory, "CamerasTotal.txt")
+            file.appendText("CAMERA $it\n")
+        }
+
         val cameras: MutableList<Map<String, Any>> = ArrayList()
         for (cameraName in cameraNames) {
             val cameraId: Int = try {
@@ -144,9 +154,11 @@ class Camera2Source(
             println("-----> CAMERA $indx <-----\n")
             file.appendText("-----> CAMERA $indx <-----\n")
             it.forEach {
-                println("-----> CAM$indx: ${it.key}: ${it.value};\n////////////////////\n")
-                file.appendText("-----> CAM$indx: ${it.key}: ${it.value};\n////////////////////\n")
+                println("-----> CAM$indx: ${it.key}: ${it.value};")
+                file.appendText("-----> CAM$indx: ${it.key}: ${it.value};\n")
             }
+            println("////////////////////")
+            file.appendText("////////////////////")
             indx++
         }
 
