@@ -171,7 +171,7 @@ class Camera2Source(
 //        characteristics = manager.getCameraCharacteristics(cameraId)
 
         device = null
-        manager.openCamera(cameraId, this, handler)
+        manager.openCamera("1", this, handler)
     }
 
     fun close() {
